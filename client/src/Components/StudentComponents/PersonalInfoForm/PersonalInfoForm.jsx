@@ -110,8 +110,8 @@ function PersonalInfoForm({ onNext }) {
         "Uni. Reg. Number should only contain letters and numbers"
       );
       isValid = false;
-    } else if (value.length !== 8) {
-      setUniregnoError("Uni. Reg. Number should be 8 characters long");
+    } else if (value.length !== 4) {
+      setUniregnoError("Uni. Reg. Number should be 4 characters long");
       isValid = false;
     } else {
       setUniregnoError("");

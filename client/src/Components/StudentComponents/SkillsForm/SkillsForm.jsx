@@ -57,21 +57,28 @@ function SkillsForm({ onNext, onBack }) {
   };
 
   const validateGitHubLink = (value) => {
-    if (!value) {
-      setGithublinkError("GitHub Link is required");
-    } else {
-      setGithublinkError("");
-    }
-  };
+  const urlPattern = /^(https?:\/\/)?([\w.-]+)\.([a-z]{2,})(\/.*)?$/i;
 
-  const validateLinkedInLink = (value) => {
-    if (!value) {
-      setLinkedinlinkError("LinkedIn Link is required");
-    } else {
-      setLinkedinlinkError("");
-    }
-  };
+  if (!value) {
+    setGithublinkError("GitHub Link is required");
+  } else if (!urlPattern.test(value)) {
+    setGithublinkError("Please enter a valid URL (e.g., https://github.com)");
+  } else {
+    setGithublinkError("");
+  }
+};
 
+const validateLinkedInLink = (value) => {
+  const urlPattern = /^(https?:\/\/)?([\w.-]+)\.([a-z]{2,})(\/.*)?$/i;
+
+  if (!value) {
+    setLinkedinlinkError("LinkedIn Link is required");
+  } else if (!urlPattern.test(value)) {
+    setLinkedinlinkError("Please enter a valid URL (e.g., https://linkedin.com)");
+  } else {
+    setLinkedinlinkError("");
+  }
+};
   const validateLanguagesKnown = (value) => {
     if (!value) {
       setLanguagesknownError("Languages Known is required");
