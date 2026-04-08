@@ -1,80 +1,102 @@
 import React, { useState } from "react";
-import { Button } from "@mui/material";
+import { Button, Checkbox, FormControlLabel, Box, Typography } from "@mui/material";
 import axios from "axios";
-import { useAuth } from "../../../Context/AuthContext"; // Import your authentication context
+import { useAuth } from "../../../Context/AuthContext";
+import { toast } from "react-toastify";
 
-function DeclarationForm({ onBack, formData }) {
-  const [viewProfile, setViewProfile] = useState(false);
+function DeclarationForm({ onBack, onNext, formData }) {
   const [declarationChecked, setDeclarationChecked] = useState(false);
-  const { auth } = useAuth(); // Access the user's email from the authentication context
+  const { auth } = useAuth();
 
-  const generatePdf = () => {
+  // This function handles the actual final submission to the database
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
     if (!declarationChecked) {
-      alert("Please check the declaration box before proceeding.");
+      toast.error("Please check the declaration box before submitting.");
       return;
     }
 
-    // Make a GET request to the /generate-userdata-pdf/:email endpoint
+    try {
+      // 1. Call the final save logic in Stepper.jsx
+      // This will trigger the navigation and the "Success" toast
+      onNext(); 
+      
+      // 2. Optional: If you still want the PDF to download on submit, 
+      // you can call generatePdf() here as well.
+    } catch (error) {
+      console.error("Submission error:", error);
+      toast.error("Something went wrong during submission.");
+    }
+  };
+
+  const generatePdf = () => {
     axios
       .get(`http://localhost:5000/generate-userdata-pdf/generate-userdata-pdf/${auth.email}`, {
         responseType: "blob",
       })
       .then((response) => {
-        // Create a blob from the response data
         const blob = new Blob([response.data], { type: "application/pdf" });
-
-        // Create a URL for the blob
         const url = window.URL.createObjectURL(blob);
-
-        // Create a link to download the PDF
         const a = document.createElement("a");
         a.href = url;
         a.download = "profile.pdf";
-
-        // Trigger a click event to download the PDF
         a.click();
       });
   };
 
   return (
-    <form style={{ marginLeft: "80px", marginRight: "80px", marginTop: "50px" }}>
-      <div>
-        <p>
-          I hereby declare that the information provided in this form is true and accurate
-          to the best of my knowledge.
-        </p>
-        <label>
-          <input
-            type="checkbox"
+    <Box sx={{ marginLeft: "80px", marginRight: "80px", marginTop: "50px", textAlign: 'center' }}>
+      
+      
+      <Typography variant="body1" sx={{ mb: 3 }}>
+        I hereby declare that the information provided in this form is true and accurate
+        to the best of my knowledge.
+      </Typography>
+
+      <FormControlLabel
+        control={
+          <Checkbox
             checked={declarationChecked}
-            onChange={() => setDeclarationChecked(!declarationChecked)}
+            onChange={(e) => setDeclarationChecked(e.target.checked)}
+            color="primary"
           />
-          I acknowledge and agree to the declaration above.
-        </label>
-        <br></br>
+        }
+        label="I acknowledge and agree to the declaration above."
+      />
+
+      <Box sx={{ mt: 5, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+        {/* Force this to be the SUBMIT button */}
         <Button
-          className="my-5"
           variant="contained"
           color="primary"
-          style={{ paddingLeft: "40px", paddingRight: "40px" }}
-          onClick={() => {
-            setViewProfile(true);
-            generatePdf();
-          }}
+          disabled={!declarationChecked}
+          style={{ paddingLeft: "60px", paddingRight: "60px", fontWeight: "bold" }}
+          onClick={handleSubmit}
         >
-          View Profile
+          SUBMIT
         </Button>
-        <div>
-          <Button
-            variant="outlined"
-            style={{ paddingLeft: "40px", paddingRight: "40px" }}
-            onClick={onBack}
-          >
-            Back
-          </Button>
-        </div>
-      </div>
-    </form>
+
+        <Button
+          variant="outlined"
+          style={{ paddingLeft: "40px", paddingRight: "40px" }}
+          onClick={onBack}
+        >
+          Back
+        </Button>
+        
+        {/* Optional: Keep PDF download as a secondary option if needed */}
+        <Button 
+          variant="text" 
+          size="small" 
+          onClick={generatePdf} 
+          disabled={!declarationChecked}
+          sx={{ mt: 2, color: 'gray' }}
+        >
+          Download Preview PDF
+        </Button>
+      </Box>
+    </Box>
   );
 }
 
