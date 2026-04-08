@@ -1,0 +1,39 @@
+/* --- Base Styles for the FrontPage Section --- */
+.background-effect {
+    /* Set the solid color from your 2nd image for the whole screen */
+    background-color: #e0f7fa !important; 
+    
+    /* REMOVE these lines if you see them in your code */
+    background-image: none !important;
+    clip-path: none !important; 
+    
+    min-height: 100vh;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* Also check for any :after or :before pseudo-elements creating shapes */
+.background-effect::before, 
+.background-effect::after {
+    display: none !important;
+}
+
+/* --- Responsive Adjustments for Tablet (max-width: 768px) --- */
+@media (max-width: 768px) {
+    .background-effect {
+        /* Adjust padding/alignment for smaller screens if needed */
+        padding: 20px;
+        background-color: #f8f9fa; /* Keeping color consistent */
+    }
+}
+
+/* --- Responsive Adjustments for Mobile (max-width: 480px) --- */
+@media (max-width: 480px) {
+    .background-effect {
+        padding: 15px;
+        text-align: center; /* Center text for better mobile UX */
+        background-color: #f8f9fa;
+    }
+}
