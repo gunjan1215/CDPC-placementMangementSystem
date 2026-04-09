@@ -9,7 +9,8 @@ import {
   Divider, 
   Paper,
   Avatar,
-  Button
+  Button,
+  CircularProgress
 } from '@mui/material';
 import axios from "axios";
 import { useAuth } from "../../../Context/AuthContext"; 
@@ -23,25 +24,26 @@ function ViewProfile() {
   useEffect(() => {
     const fetchAllStudentData = async () => {
       try {
-        const email = auth.email;
-        const userId = auth._id;
+        const email = auth?.email;
+        const userId = auth?._id;
 
-        // 1. Fetch Basic Personal Info
-        const userRes = await axios.get(`http://localhost:5000/get-user-byid/get-user-byid/get-user-byid/${userId}`);
+        if (!email || !userId) return;
+
+        // 1. Fetch Basic Personal Info (Clean URL)
+        const userRes = await axios.get(`http://localhost:5000/get-user-byid/${userId}`);
         
-        // 2. Fetch Education Details
-        const eduRes = await axios.get(`http://localhost:5000/get-education-details/get-education-details/get-education-details/${email}`);
+        // 2. Fetch Education Details (Clean URL matching new Backend)
+        const eduRes = await axios.get(`http://localhost:5000/get-education-details/${email}`);
         
-        // 3. Fetch Skills & Links
-        const skillsRes = await axios.get(`http://localhost:5000/get-skills-details/get-skills-details/get-skills-details/${email}`);
+        // 3. Fetch Skills & Links (Clean URL matching new Backend)
+        const skillsRes = await axios.get(`http://localhost:5000/get-skills-details/${email}`);
 
         // Merge all data into one state object
         setProfileData({
           ...userRes.data,
           ...eduRes.data,
           ...skillsRes.data,
-          // Mapping specific names if they differ in your DB
-          fullName: `${userRes.data.firstname} ${userRes.data.lastname}`,
+          fullName: `${userRes.data?.firstname || ""} ${userRes.data?.lastname || ""}`,
         });
         
         setLoading(false);
@@ -51,12 +53,17 @@ function ViewProfile() {
       }
     };
 
-    if (auth && (auth.email || auth._id)) {
-      fetchAllStudentData();
-    }
+    fetchAllStudentData();
   }, [auth]);
 
-  if (loading) return <Typography sx={{ p: 5 }}>Loading Profile...</Typography>;
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <CircularProgress />
+        <Typography sx={{ ml: 2 }}>Loading Profile...</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 4, maxWidth: "1000px", margin: "auto" }}>
@@ -66,13 +73,17 @@ function ViewProfile() {
         <Grid container spacing={4} alignItems="center" sx={{ mb: 4 }}>
           <Grid item>
             <Avatar 
-              src={`http://localhost:5000/uploads/${profileData.profilephoto}`} 
+              src={profileData.profilephoto ? `http://localhost:5000/uploads/${profileData.profilephoto}` : ""} 
               sx={{ width: 120, height: 120, border: '3px solid #1976D2' }}
-            />
+            >
+              {profileData.firstname?.charAt(0)}
+            </Avatar>
           </Grid>
           <Grid item xs>
             <Typography variant="h4" sx={{ fontWeight: 'bold' }}>{profileData.fullName}</Typography>
-            <Typography variant="h6" color="textSecondary">{profileData.departmentName || "Student"}</Typography>
+            <Typography variant="h6" color="textSecondary">
+                {profileData.departmentName || profileData.program || "Student"}
+            </Typography>
             <Button 
               component={Link} 
               to="/student/update-profile" 
@@ -80,7 +91,7 @@ function ViewProfile() {
               size="small" 
               sx={{ mt: 1 }}
             >
-              Edit Profile
+              Update Profile
             </Button>
           </Grid>
         </Grid>
@@ -170,7 +181,7 @@ function ViewProfile() {
                 variant="outlined" 
                 onClick={() => window.open(`http://localhost:5000/uploads/${profileData.resume}`, "_blank")}
               >
-                📄 View Resume (PDF)
+                📄 View Uploaded Resume
               </Button>
             )}
           </Grid>

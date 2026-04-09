@@ -458,24 +458,29 @@ function EducationForm({ onNext, onBack }) {
       console.log(studentId);
   
       // Fetch student data
-      const response = await axios.get(
-        `http://localhost:5000/get-user-byid/get-user-byid/get-user-byid/${studentId}`
-      );
-      console.log(response);
-      const departmentId = response.data.departmentId;
-      console.log(departmentId);
-  
-      // Fetch department name
-      const departmentResponse = await axios.get(
-        `http://localhost:5000/get-department-name/get-department-name/get-department-name/${departmentId}`
-      );
-      const departmentName = departmentResponse.data.departmentName;
-      console.log(departmentName);
-  
-      // Fetch education details
-      const educationResponse = await axios.get(
-        `http://localhost:5000/get-education-details/get-education-details/get-education-details/${studentEmail}`
-      );
+      // 1. Fetch student basic data
+const response = await axios.get(
+  `http://localhost:5000/get-user-byid/${studentId}`
+);
+console.log("User Response:", response.data);
+
+const departmentId = response.data.departmentId;
+
+// 2. Fetch department name (Only if departmentId exists)
+let departmentName = "";
+if (departmentId) {
+  const departmentResponse = await axios.get(
+    `http://localhost:5000/get-department-name/${departmentId}`
+  );
+  departmentName = departmentResponse.data.departmentName;
+  console.log("Department Name:", departmentName);
+}
+
+// 3. Fetch education details
+const educationResponse = await axios.get(
+  `http://localhost:5000/get-education-details/${studentEmail}`
+);
+console.log("Education Data:", educationResponse.data);
   
       console.log(educationResponse);
   

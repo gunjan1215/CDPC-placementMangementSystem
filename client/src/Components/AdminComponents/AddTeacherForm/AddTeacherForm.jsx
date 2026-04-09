@@ -14,17 +14,13 @@ import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
-// import { validationSchema } from "../../../Helpers/ValidationSchema";
 import * as yup from "yup";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function TeacherAddForm() {
-  const [gender, setGender] = useState("");
-  const [departments, setDepartments] = useState([]);
-  const [selectedDepartment, setSelectedDepartmentId] = useState(""); // Fix this variable name
   const [email, setEmail] = useState("");
   const navigate = useNavigate();
 
@@ -51,7 +47,7 @@ export default function TeacherAddForm() {
         "no-repeated-digits",
         "Repeated digits are not allowed",
         (value) => {
-          const repeatingPattern = /(.)\1{9}/; // Matches repeated digits 10 times
+          const repeatingPattern = /(.)\1{9}/;
           return !repeatingPattern.test(value);
         }
       )
@@ -63,8 +59,6 @@ export default function TeacherAddForm() {
         /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
         "Invalid email address"
       ),
-    department: yup.string().required("Department is required"),
-    batch: yup.string().required("Batch is required"),
     password: yup
       .string()
       .required("Password is required")
@@ -84,26 +78,9 @@ export default function TeacherAddForm() {
     resolver: yupResolver(validationSchema),
   });
 
-  useEffect(() => {
-    // Fetch department data when the component mounts
-    async function fetchDepartments() {
-      try {
-        const response = await axios.get(
-          "http://localhost:5000/departments/departments"
-        );
-        setDepartments(response.data);
-      } catch (error) {
-        console.error("Error fetching departments:", error);
-      }
-    }
-
-    fetchDepartments();
-  }, []); // Empty dependency array ensures it only runs once
-
   async function onSubmit(data) {
-    data.department = selectedDepartment;
     data.role = "teacher";
-    console.log(data); // Check the data before sending the request
+    console.log("Submitting Data:", data);
     try {
       const response = await axios.post(
         "http://localhost:5000/teacher/register/register",
@@ -130,7 +107,6 @@ export default function TeacherAddForm() {
           sx={{
             backgroundColor: "white",
             margin: "0 auto",
-            marginTop: "0px",
             width: "600px",
             display: "flex",
             flexDirection: "column",
@@ -179,9 +155,7 @@ export default function TeacherAddForm() {
                           trigger("firstName");
                         }}
                         error={!!errors.firstName}
-                        helperText={
-                          errors.firstName ? errors.firstName.message : ""
-                        }
+                        helperText={errors.firstName?.message}
                       />
                     )}
                   />
@@ -204,33 +178,28 @@ export default function TeacherAddForm() {
                           trigger("lastName");
                         }}
                         error={!!errors.lastName}
-                        helperText={
-                          errors.lastName ? errors.lastName.message : ""
-                        }
+                        helperText={errors.lastName?.message}
                       />
                     )}
                   />
                 </Grid>
                 <Grid item xs={12}>
-                  <FormControl fullWidth>
-                    <InputLabel htmlFor="gender">Gender</InputLabel>
+                  <FormControl fullWidth error={!!errors.gender}>
+                    <InputLabel id="gender-label">Gender</InputLabel>
                     <Controller
                       name="gender"
                       control={control}
-                      defaultValue={gender}
+                      defaultValue=""
                       render={({ field }) => (
                         <Select
                           {...field}
+                          labelId="gender-label"
                           id="gender"
-                          onBlur={() => trigger("gender")}
+                          label="Gender"
                           onChange={(e) => {
                             field.onChange(e);
                             trigger("gender");
                           }}
-                          error={!!errors.gender}
-                          fullWidth
-                          label="Gender"
-                          select // Add select prop to make it a dropdown
                         >
                           <MenuItem value="Male">Male</MenuItem>
                           <MenuItem value="Female">Female</MenuItem>
@@ -239,7 +208,7 @@ export default function TeacherAddForm() {
                       )}
                     />
                     {errors.gender && (
-                      <Typography variant="caption" color="error">
+                      <Typography variant="caption" color="error" sx={{ mt: "3px", ml: "14px" }}>
                         {errors.gender.message}
                       </Typography>
                     )}
@@ -263,7 +232,7 @@ export default function TeacherAddForm() {
                           trigger("mobno");
                         }}
                         error={!!errors.mobno}
-                        helperText={errors.mobno ? errors.mobno.message : ""}
+                        helperText={errors.mobno?.message}
                       />
                     )}
                   />
@@ -274,100 +243,25 @@ export default function TeacherAddForm() {
                     control={control}
                     defaultValue=""
                     render={({ field }) => (
-                      <div className="d-flex">
-                        <TextField
-                          {...field}
-                          fullWidth
-                          id="email"
-                          label="Email Address"
-                          value={email}
-                          autoComplete="email"
-                          onBlur={() => trigger("email")}
-                          onChange={(e) => {
-                            field.onChange(e);
-                            setEmail(e.target.value);
-                            trigger("email");
-                          }}
-                          error={!!errors.email}
-                          helperText={errors.email ? errors.email.message : ""}
-                        />
-                      </div>
+                      <TextField
+                        {...field}
+                        fullWidth
+                        id="email"
+                        label="Email Address"
+                        autoComplete="email"
+                        onBlur={() => trigger("email")}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          setEmail(e.target.value);
+                          trigger("email");
+                        }}
+                        error={!!errors.email}
+                        helperText={errors.email?.message}
+                      />
                     )}
                   />
                 </Grid>
-                <Grid item xs={12}>
-                  <Grid item xs={12}>
-                    <Controller
-                      name="department"
-                      control={control}
-                      defaultValue=""
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          fullWidth
-                          id="department"
-                          label="Department"
-                          onBlur={() => trigger("department")}
-                          onChange={(e) => {
-                            setSelectedDepartmentId(e.target.value);
 
-                            // Set the selected department ID as the value
-                            field.onChange(e.target.value);
-                            trigger("department");
-                          }}
-                          error={!!errors.department}
-                          helperText={
-                            errors.department ? errors.department.message : ""
-                          }
-                          select
-                        >
-                          {departments.map((department) => (
-                            <MenuItem
-                              key={department._id}
-                              value={department.departmentId}
-                            >
-                              {department.name}
-                            </MenuItem>
-                          ))}
-                        </TextField>
-                      )}
-                    />
-                  </Grid>
-                </Grid>
-                <Grid item xs={12}>
-                  <FormControl fullWidth>
-                    <InputLabel htmlFor="batch">Batch</InputLabel>
-                    <Controller
-                      name="batch"
-                      control={control}
-                      defaultValue=""
-                      render={({ field }) => (
-                        <Select
-                          {...field}
-                          id="batch"
-                          onBlur={() => trigger("batch")}
-                          onChange={(e) => {
-                            field.onChange(e);
-                            trigger("batch");
-                          }}
-                          error={!!errors.gender}
-                          fullWidth
-                          label="Batch"
-                          select
-                        >
-                          <MenuItem value="A">Div A</MenuItem>
-                          <MenuItem value="B">Div B</MenuItem>
-                          <MenuItem value="C">Div C</MenuItem>
-                        </Select>
-                      )}
-                    />
-                    {errors.gender && (
-                      <Typography variant="caption" color="error">
-                        {errors.batch.message}
-                      </Typography>
-                    )}
-                  </FormControl>
-                </Grid>
                 <Grid item xs={12}>
                   <Controller
                     name="password"
@@ -387,9 +281,7 @@ export default function TeacherAddForm() {
                           trigger("password");
                         }}
                         error={!!errors.password}
-                        helperText={
-                          errors.password ? errors.password.message : ""
-                        }
+                        helperText={errors.password?.message}
                       />
                     )}
                   />
