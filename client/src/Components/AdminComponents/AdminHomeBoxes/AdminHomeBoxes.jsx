@@ -69,7 +69,24 @@ function AdminHomeBoxes() {
   const handleClickOnStudentManagement = () => {
     navigate("/student-management");
   };
+  useEffect(() => {
+  // ... your existing calls for students, teachers, and pdfs
 
+  // NEW CALL: Fetch and filter Placed Students
+  axios
+    .get("http://localhost:5000/get-students/get-students")
+    .then((response) => {
+      if (Array.isArray(response.data)) {
+        // Filter students whose status is exactly 'Placed'
+        // Ensure the string matches exactly what you save in your DB (e.g., "Placed" vs "placed")
+        const placed = response.data.filter(student => student.status === "Placed");
+        setPlacedStudentsCount(placed.length);
+      }
+    })
+    .catch((error) => {
+      console.error("Error calculating placed students:", error);
+    });
+}, []);
   return (
     <div>
       <div className="row g-3" style={{ padding: "20px" }}>
