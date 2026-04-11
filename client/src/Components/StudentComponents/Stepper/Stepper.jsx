@@ -1,77 +1,94 @@
 import React, { useState, useEffect } from "react";
-import { Button, Step, StepLabel, Stepper, Typography, Box } from "@mui/material";
+import { Step, StepLabel, Stepper, Typography, Box, CircularProgress } from "@mui/material";
 import axios from "axios";
 import { useNavigate } from 'react-router-dom';
 import { toast } from "react-toastify";
+import { useAuth } from "../../../Context/AuthContext"; // Ensure path is correct
 
 import PersonalInfoForm from "../PersonalInfoForm/PersonalInfoForm";
 import EducationForm from "../EducationForm/EducationForm";
 import SkillsForm from "../SkillsForm/SkillsForm";
 import DeclarationForm from "../DeclarationForm/DeclarationForm";
 
-const steps = [
-  "Step 1: Personal Information",
-  "Step 2: Education Records",
-  "Step 3: Skills",
-  "Step 4: Declaration"
-];
+const steps = ["Personal Info", "Education", "Skills", "Declaration"];
 
 function ProfileUpdateStepper() {
+  const { auth } = useAuth();
   const [activeStep, setActiveStep] = useState(0);
-  const [formState, setFormState] = useState({});
+  const [formState, setFormState] = useState({
+    personalInfo: null,
+    education: null,
+    skills: null
+  });
+  const [initialLoading, setInitialLoading] = useState(true);
   const history = useNavigate();
 
-  // Scroll to top whenever step changes
+  // 1. FETCH EXISTING DATA ON LOAD
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [activeStep]);
+    const fetchExistingData = async () => {
+      try {
+        setInitialLoading(true);
+        // Fetch from the GET routes we found in your server.js
+        const [persRes, eduRes, skillRes] = await Promise.all([
+          axios.get(`http://localhost:5000/get-personal-details/${auth.email}`),
+          axios.get(`http://localhost:5000/get-education-details/${auth.email}`),
+          axios.get(`http://localhost:5000/get-skills-details/${auth.email}`)
+        ]);
 
-  const handleNext = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep + 1);
-  };
+        setFormState({
+          personalInfo: persRes.data || null,
+          education: eduRes.data || null,
+          skills: skillRes.data || null
+        });
+      } catch (error) {
+        console.error("Error fetching existing profile:", error);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
 
-  const handleBack = () => {
-    setActiveStep((prevActiveStep) => prevActiveStep - 1);
-  };
+    if (auth?.email) fetchExistingData();
+  }, [auth?.email]);
+
+  const handleNext = () => setActiveStep((prev) => prev + 1);
+  const handleBack = () => setActiveStep((prev) => prev - 1);
 
   const handleStepSubmit = async (data, key) => {
-    // 1. First, merge the data from the current step into formState
-    let updatedFormState = { ...formState };
-    if (key && data) {
-      updatedFormState = {
-        ...formState,
-        [key]: data,
-      };
-      setFormState(updatedFormState);
-    }
+    // Merge data into local state
+    const updatedFormState = { ...formState, [key]: data };
+    setFormState(updatedFormState);
 
-    // 2. Check if we are on the final step (Declaration)
-    if (activeStep === steps.length - 1) {
-      try {
-        // Final API submission can be handled here or inside DeclarationForm
-        // Setting success flag for the UI
-        localStorage.setItem('profileUpdateSuccess', 'true'); 
-        
+    try {
+      // 2. SAVE DATA TO BACKEND
+      if (activeStep === 0) {
+        await axios.post("http://localhost:5000/studentdetails/personaldetails", data);
+        toast.info("Personal details saved!");
+      } 
+      else if (activeStep === 1) {
+        await axios.post("http://localhost:5000/studentdetails/educationdetails", data);
+        toast.info("Education details saved!");
+      }
+
+      if (activeStep === steps.length - 1) {
         toast.success("Profile Updated Successfully!!!");
         history("/studenthome");
-      } catch (error) {
-        console.error("Final Submission Error:", error);
-        toast.error("Failed to update profile. Please try again.");
+      } else {
+        handleNext();
       }
-    } else {
-      // Move to next step
-      handleNext();
+    } catch (error) {
+      console.error("Save Error:", error);
+      toast.error("Failed to save. Check backend connection.");
     }
   };
 
-  const isLastStep = activeStep === steps.length - 1;
-
-  const handleStepLabelClick = (stepIndex) => {
-    // Only allow clicking back to steps already visited
-    if (stepIndex < activeStep) {
-      setActiveStep(stepIndex);
-    }
-  };
+  if (initialLoading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 20 }}>
+        <CircularProgress />
+        <Typography sx={{ ml: 2 }}>Loading your profile...</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ width: '100%', marginTop: "70px", paddingBottom: "50px" }}>
@@ -79,7 +96,7 @@ function ProfileUpdateStepper() {
         {steps.map((label, index) => (
           <Step key={label}>
             <StepLabel 
-              onClick={() => handleStepLabelClick(index)} 
+              onClick={() => index < activeStep && setActiveStep(index)} 
               sx={{ cursor: index < activeStep ? 'pointer' : 'default' }}
             >
               {label}
@@ -88,61 +105,33 @@ function ProfileUpdateStepper() {
         ))}
       </Stepper>
 
-      <Box sx={{ padding: { xs: "10px", md: "20px" } }}>
-        {activeStep === steps.length ? (
-          <Box sx={{ textAlign: 'center', mt: 5 }}>
-            <Typography variant="h5">Profile Updated Successfully!</Typography>
-          </Box>
-        ) : (
-          <Box>
-            <Typography
-              variant="h6"
-              sx={{
-                marginTop: "40px",
-                marginBottom: "20px",
-                fontWeight: "bold",
-                textAlign: "center",
-                color: "#1976D2"
-              }}
-            >
-              {steps[activeStep]}
-            </Typography>
-
-            {/* Step 1: Personal Info */}
-            {activeStep === 0 && (
-              <PersonalInfoForm 
-                onNext={(data) => handleStepSubmit(data, 'personalInfo')} 
-                initialData={formState.personalInfo} 
-              />
-            )}
-            
-            {/* Step 2: Education */}
-            {activeStep === 1 && (
-              <EducationForm 
-                onNext={(data) => handleStepSubmit(data, 'education')} 
-                onBack={handleBack} 
-                initialData={formState.education} 
-              />
-            )}
-            
-            {/* Step 3: Skills */}
-            {activeStep === 2 && (
-              <SkillsForm 
-                onNext={(data) => handleStepSubmit(data, 'skills')} 
-                onBack={handleBack} 
-                initialData={formState.skills} 
-              />
-            )}
-            
-            {/* Step 4: Declaration */}
-            {activeStep === 3 && (
-              <DeclarationForm 
-                formData={formState} 
-                onBack={handleBack} 
-                onNext={() => handleStepSubmit(null, null)} // Triggers final submission
-              />
-            )}
-          </Box>
+      <Box sx={{ padding: "20px" }}>
+        {activeStep === 0 && (
+          <PersonalInfoForm 
+            onNext={(data) => handleStepSubmit(data, 'personalInfo')} 
+            initialData={formState.personalInfo} 
+          />
+        )}
+        {activeStep === 1 && (
+          <EducationForm 
+            onNext={(data) => handleStepSubmit(data, 'education')} 
+            onBack={handleBack} 
+            initialData={formState.education} 
+          />
+        )}
+        {activeStep === 2 && (
+          <SkillsForm 
+            onNext={(data) => handleStepSubmit(data, 'skills')} 
+            onBack={handleBack} 
+            initialData={formState.skills} 
+          />
+        )}
+        {activeStep === 3 && (
+          <DeclarationForm 
+            formData={formState} 
+            onBack={handleBack} 
+            onNext={() => handleStepSubmit(null, null)} 
+          />
         )}
       </Box>
     </Box>

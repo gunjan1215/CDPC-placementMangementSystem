@@ -61,6 +61,7 @@ const otpStore = {};
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.json());
+app.use("/", getUserDataRoutes);
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
@@ -213,6 +214,10 @@ app.get("/notes/download/:id", async (req, res) => {
     console.error(error);
     res.status(500).json({ error: "Server error" });
   }
+  const path = require("path");
+
+// This line tells Express to serve the files inside the "uploads" folder publicly
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 });
 
 // app.listen(PORT, () => {

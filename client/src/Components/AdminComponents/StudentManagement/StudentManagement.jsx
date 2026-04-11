@@ -4,19 +4,18 @@ import {
   DataGrid,
   GridToolbar,
   GridToolbarContainer,
-  
 } from "@mui/x-data-grid";
-import { TextField, Typography } from "@mui/material";
+import { TextField, Typography, Dialog, DialogContent, Button, Box, Avatar } from "@mui/material";
 import { makeStyles } from "@mui/styles";
-import { Dialog, DialogContent, Button } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import { TextareaAutosize } from "@mui/base/TextareaAutosize";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import StatusButton from "./StatusButton";
 
 const useStyles = makeStyles((theme) => ({
   dialogContent: {
-    width: "1000px", // Adjust the width as needed
+    width: "1000px",
     height: "500px",
     display: "flex",
     flexDirection: "column",
@@ -27,22 +26,15 @@ const useStyles = makeStyles((theme) => ({
   },
   textArea: {
     width: "100%",
-    flexGrow: 1, // Fill remaining space
+    flexGrow: 1,
+    padding: "10px",
+    fontFamily: "Nunito",
+    fontSize: "16px",
   },
   buttonContainer: {
     display: "flex",
     justifyContent: "space-between",
     marginTop: "20px",
-  },
-  button: {
-    margin: "8px",
-  },
-
-  heading: {
-    paddingLeft: "450px",
-    marginTop: "36px",
-    color: "blue",
-    fontWeight: "bold",
   },
   customToolbar: {
     display: "flex",
@@ -50,100 +42,49 @@ const useStyles = makeStyles((theme) => ({
     justifyContent: "space-between",
     marginRight: "10px",
     "& .MuiButton-root": {
-      border: "none", // Remove the button border
+      border: "none",
     },
     "& .MuiButton-startIcon": {
-      marginRight: "8px", // Add some space between the icon and text
+      marginRight: "8px",
     },
   },
   customHeader: {
     backgroundColor: "#ebeae8",
-    fontFamily: "bold",
+    fontWeight: "bold",
     fontSize: "14px",
-    alignItems: "center",
-  },
-
-  button: {
-    marginLeft: "140px",
   },
 }));
 
-
-
-
-export default function StudentManagement({onChange}) {
+export default function StudentManagement({ onChange }) {
   const [users, setUsers] = useState([]);
-  const [personal, setPersonal] = useState([]);
-  const [education, setEducation] = useState([]);
-  const [skills, setSkills] = useState([]);
-  const [page, setPage] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filter, setFilter] = useState({});
   const classes = useStyles();
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
-  const [filteredEmails, setFilteredEmails] = useState([]);
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [selectedEmails, setSelectedEmails] = useState([]);
 
   const columns = [
+    { field: "serialNumber", headerName: "Serial No", width: 80 },
     {
-      field: "serialNumber",
-      headerName: "Serial No",
-      headerClassName: "custom-header",
-      editable: true,
-      checkboxSelection: true,
-      valueGetter: (params) => params.row.serialNumber || "-",
-      width: 80,
+      field: "profilephoto",
+      headerName: "Photo",
+      width: 70,
+      renderCell: (params) => (
+        <Avatar 
+          src={params.row.profilephoto ? `http://localhost:5000/uploads/${params.row.profilephoto}` : ""} 
+          alt="User"
+        />
+      ),
     },
-    {
-      field: "firstname",
-      headerName: "First Name",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.firstname || "-",
-      width: 140,
-    },
-    {
-      field: "lastname",
-      headerName: "Last Name",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.lastname || "-",
-      width: 100,
-    },
-    {
-      field: "department",
-      headerName: "Department",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.department || "-",
-      width: 165,
-    },
-    {
-      field: "gender",
-      headerName: "Gender",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.gender || "-",
-    },
-    {
-      field: "graduationYear",
-      headerName: "Passout Year",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.graduationYear || "-",
-    },
-    {
-      field: "email",
-      headerName: "Email",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.email || "-",
-      width: 200,
-    },
-    {
-      field: "mobno",
-      headerName: "Mobile No",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.mobno || "-",
-      width: 120,
-    },
+    { field: "firstname", headerName: "First Name", width: 140 },
+    { field: "lastname", headerName: "Last Name", width: 100 },
+    { field: "department", headerName: "Department", width: 165 },
+    { field: "email", headerName: "Email", width: 200 },
+    { field: "mobno", headerName: "Mobile No", width: 120 },
     {
       field: "status",
       headerName: "Status",
@@ -155,387 +96,109 @@ export default function StudentManagement({onChange}) {
         />
       ),
     },
+    { field: "mcaaggregateCGPA", headerName: "MCA CGPA", width: 120 },
+    { field: "activearrears", headerName: "Arrears", width: 100 },
+    { field: "technicalskills", headerName: "Skills", width: 180 },
     {
-      field: "dob",
-      headerName: "Date of Birth",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.dob || "-",
-      width: 120,
+      field: "resume",
+      headerName: "Resume",
+      width: 130,
+      renderCell: (params) => (
+        params.row.resume ? (
+          <Button
+            variant="outlined"
+            size="small"
+            color="secondary"
+            startIcon={<PictureAsPdfIcon />}
+            onClick={() => window.open(`http://localhost:5000/uploads/${params.row.resume}`, "_blank")}
+          >
+            View
+          </Button>
+        ) : (
+          <Typography variant="caption" color="textSecondary">Not Uploaded</Typography>
+        )
+      ),
     },
-    {
-      field: "personalemail",
-      headerName: "Personal Email",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.personalemail || "-",
-      width: 160,
-    },
-    {
-      field: "fathername",
-      headerName: "Father's Name",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.fathername || "-",
-    },
-    {
-      field: "mothername",
-      headerName: "Mother's Name",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.mothername || "-",
-    },
-    {
-      field: "housename",
-      headerName: "House Name",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.housename || "-",
-    },
-    {
-      field: "postoffice",
-      headerName: "Post Office",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.postoffice || "-",
-    },
-    {
-      field: "city",
-      headerName: "City",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.city || "-",
-    },
-    {
-      field: "state",
-      headerName: "State",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.state || "-",
-    },
-    {
-      field: "pincode",
-      headerName: "Pincode",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.pincode || "-",
-    },
-    {
-      field: "nationality",
-      headerName: "Nationality",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.nationality || "-",
-    },
-    {
-      field: "tenthpercentage",
-      headerName: "10th Percentage",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.tenthpercentage || "-",
-    },
-    {
-      field: "tenthCGPA",
-      headerName: "10th CGPA",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.tenthCGPA || "-",
-    },
-    {
-      field: "tenthboard",
-      headerName: "10th Board",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.tenthboard || "-",
-    },
-    {
-      field: "tenthschoolname",
-      headerName: "10th School Name",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.tenthschoolname || "-",
-    },
-    {
-      field: "twelthpercentage",
-      headerName: "12th Percentage",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.twelthpercentage || "-",
-    },
-    {
-      field: "twelthCGPA",
-      headerName: "12th CGPA",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.twelthCGPA || "-",
-    },
-    {
-      field: "twelthboard",
-      headerName: "12th Board",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.twelthboard || "-",
-    },
-    {
-      field: "twelthschoolname",
-      headerName: "12th School Name",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.twelthschoolname || "-",
-    },
-    {
-      field: "ugcoursename",
-      headerName: "Undergraduate Course Name",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.ugcoursename || "-",
-    },
-    {
-      field: "ugpercentage",
-      headerName: "Undergraduate Percentage",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.ugpercentage || "-",
-    },
-    {
-      field: "ugCGPA",
-      headerName: "Undergraduate CGPA",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.ugCGPA || "-",
-    },
-    {
-      field: "ugyearofgraduation",
-      headerName: "Undergraduate Year of Graduation",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.ugyearofgraduation || "-",
-    },
-    {
-      field: "ugcollegename",
-      headerName: "Undergraduate College Name",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.ugcollegename || "-",
-    },
-    {
-      field: "uguniversity",
-      headerName: "Undergraduate University",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.uguniversity || "-",
-    },
-    {
-      field: "mcaaggregateCGPA",
-      headerName: "MCA Aggregate CGPA",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.mcaaggregateCGPA || "-",
-    },
-    { field: "activearrears", headerName: "Active Arrears", rowLength: 30000 },
-    {
-      field: "historyofarrears",
-      headerName: "History of Arrears",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.historyofarrears || "-",
-    },
-    {
-      field: "technicalskills",
-      headerName: "Technical Skills",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.technicalskills || "-",
-    },
-    {
-      field: "projects",
-      headerName: "Projects",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.projects || "-",
-    },
-    {
-      field: "githublink",
-      headerName: "GitHub Link",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.githublink || "-",
-    },
-    {
-      field: "linkedinlink",
-      headerName: "LinkedIn Link",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.linkedinlink || "-",
-    },
-    {
-      field: "languagesknown",
-      headerName: "Languages Known",
-      rowLength: 30000,
-      valueGetter: (params) => params.row.languagesknown || "-",
-    },
-    // Add more fields as needed
   ];
 
-  //Fetching
-
   const fetchDepartmentName = async (departmentId) => {
+    if (!departmentId) return "Not Assigned";
     try {
-      const response = await axios.get(
-        `http://localhost:5000/get-department-name/get-department-name/get-department-name/${departmentId}`
-      );
+      const response = await axios.get(`http://localhost:5000/get-department-name/${departmentId}`);
       return response.data.departmentName;
     } catch (error) {
-      console.error(
-        `Error fetching department name for ID ${departmentId}:`,
-        error
-      );
-      return "";
-    }
-  };
-
-  const fetchPersonalData = async () => {
-    try {
-      const personalResponse = await axios.get(
-        "http://localhost:5000/get-personal-details/get-personal-details"
-      );
-      const personalData = personalResponse.data;
-      setPersonal(personalData);
-      console.log(personalData);
-    } catch (error) {
-      console.error("Error fetching personal data:", error);
-    }
-  };
-
-  const fetchEducationData = async () => {
-    try {
-      const educationResponse = await axios.get(
-        "http://localhost:5000/get-education-details/get-education-details"
-      );
-      const educationData = educationResponse.data;
-      setEducation(educationData);
-    } catch (error) {
-      console.error("Error fetching education data:", error);
-    }
-  };
-
-  const fetchSkillsData = async () => {
-    try {
-      const skillsResponse = await axios.get(
-        "http://localhost:5000/get-skills-details/get-skills-details"
-      );
-      const skillsData = skillsResponse.data;
-      setSkills(skillsData);
-    } catch (error) {
-      console.error("Error fetching skills data:", error);
+      console.error(`Error fetching department:`, error);
+      return "N/A";
     }
   };
 
   const fetchUserAndCombineData = async () => {
     try {
-      // Fetch data from personal
-      const personalResponse = await axios.get(
-        "http://localhost:5000/get-personal-details/get-personal-details"
-      );
-      const personalData = personalResponse.data;
-      console.log(personalData);
+      setLoading(true);
+      
+      const [personalRes, educationRes, skillsRes, usersRes] = await Promise.all([
+        axios.get("http://localhost:5000/get-personal-details"),
+        axios.get("http://localhost:5000/get-education-details"),
+        axios.get("http://localhost:5000/get-skills-details"),
+        axios.get("http://localhost:5000/get-students/get-students")
+      ]);
 
-      // Fetch data from education
-      const educationResponse = await axios.get(
-        "http://localhost:5000/get-education-details/get-education-details"
-      );
-      const educationData = educationResponse.data;
-      console.log(educationData);
+      // 1. Convert responses to Arrays (handling null/undefined)
+      const personalData = Array.isArray(personalRes.data) ? personalRes.data : [];
+      const educationData = Array.isArray(educationRes.data) ? educationRes.data : [];
+      const skillsData = Array.isArray(skillsRes.data) ? skillsRes.data : [];
+      const studentBaseData = Array.isArray(usersRes.data) ? usersRes.data : [];
 
-      // Fetch data from skills
-      const skillsResponse = await axios.get(
-        "http://localhost:5000/get-skills-details/get-skills-details"
-      );
-      const skillsData = skillsResponse.data;
-
-      // Fetch users and combine data
-      const response = await axios.get("http://localhost:5000/get-students/get-students");
-      const usersData = response.data.map((user, index) => {
-        const userEducationData =
-          educationData.find((education) => education.email === user.email) ||
-          {};
-        const userSkillsData =
-          skillsData.find((skills) => skills.email === user.email) || {};
-        const userPersonalData =
-          personalData.find((personal) => personal.email === user.email) || {};
+      // 2. Combine the data using Email as the key
+      const combinedData = studentBaseData.map((user, index) => {
+        // Find matching records in other collections
+        const userEdu = educationData.find((ed) => ed.email === user.email) || {};
+        const userSkill = skillsData.find((sk) => sk.email === user.email) || {};
+        const userPers = personalData.find((ps) => ps.email === user.email) || {};
+        
         return {
+          // IMPORTANT: DataGrid MUST have a unique 'id' field
+          id: user._id || user.email || `row-${index}`, 
           ...user,
           serialNumber: index + 1,
-          ...userEducationData,
-          ...userPersonalData,
-          ...userSkillsData,
+          ...userEdu,
+          ...userPers,
+          ...userSkill,
+          // Ensure names don't disappear if personalData is missing
+          firstname: userPers.firstname || user.firstname || "N/A",
+          lastname: userPers.lastname || user.lastname || "N/A",
         };
       });
 
-      const usersWithDepartmentNames = await Promise.all(
-        usersData.map(async (user) => {
-          const departmentName = await fetchDepartmentName(user.departmentId);
-          return { ...user, department: departmentName };
-        })
-      );
+      // 3. Update the state
+      setUsers(combinedData);
+      console.log("Combined Data for Table:", combinedData); // Check your console!
 
-      setUsers(usersWithDepartmentNames);
     } catch (error) {
-      console.error("Error fetching and combining data:", error);
+      console.error("Error merging student data:", error);
+      setUsers([]); 
+    } finally {
+      setLoading(false);
     }
   };
-
-  console.log(users);
 
   useEffect(() => {
     fetchUserAndCombineData();
   }, []);
 
   const handleStatusChange = async (email, newStatus) => {
-    console.log("Updating status for email:", email, "to", newStatus);
-  
     try {
-      const response = await axios.post(
-        "http://localhost:5000/update-student-status/update-student-status",
-        {
-          email,
-          newStatus,
-        }
-      );
-  
-      
+      await axios.post("http://localhost:5000/update-student-status/update-student-status", {
+        email,
+        newStatus,
+      });
       fetchUserAndCombineData();
-      console.log(`Status updated successfully for user with ID`);
     } catch (error) {
       console.error("Error updating status:", error);
     }
   };
-  
-
-
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(+event.target.value);
-    setPage(0);
-  };
-  const getRowId = (row) => row.email;
-
-  //Dialog CLOSE AND OPEN
-
-  const openFilterDialog = () => {
-    setFilterDialogOpen(true);
-  };
-
-  const openSendDialog = () => {
-    setSendDialogOpen(true);
-  };
-
-  const closeFilterDialog = () => {
-    setFilterDialogOpen(false);
-  };
-  const closeSendDialog = () => {
-    setSendDialogOpen(false);
-  };
-
-  const CustomToolbar = () => {
-    return (
-      <GridToolbarContainer className={classes.customToolbar}>
-        <GridToolbar sx={{}} />
-        <Button
-          variant="outlined"
-          color="primary"
-          onClick={openFilterDialog}
-          startIcon={<FilterListIcon />}
-        >
-          Filters
-        </Button>
-        <Button
-          variant="outlined"
-          color="primary"
-          onClick={openSendDialog}
-          startIcon={<NotificationsIcon />}
-        >
-          Send Notifications
-        </Button>
-      </GridToolbarContainer>
-    );
-  };
 
   const handleInputChange = (event) => {
-    console.log(event);
     setFilter({
       ...filter,
       [event.target.name]: event.target.value,
@@ -543,265 +206,93 @@ export default function StudentManagement({onChange}) {
   };
 
   const filteredData = users.filter((userObj) => {
-    return Object.keys(filter)?.every((key) => {
+    return Object.keys(filter).every((key) => {
       const filterValue = (filter[key] || "").toLowerCase();
+      if (!filterValue) return true;
 
-      if (!filterValue) {
-        return true;
+      if (["tenthpercentage", "twelthpercentage", "ugpercentage", "activearrears", "mcaaggregateCGPA"].includes(key)) {
+        const numericVal = Number(userObj[key] || 0);
+        const filterNum = Number(filterValue);
+        if (isNaN(filterNum)) return true;
+        return numericVal >= filterNum;
       }
 
-      if (
-        key === "tenthpercentage" ||
-        key === "twelthpercentage" ||
-        key === "ugpercentage"
-      ) {
-        return Number(userObj[key] || 0) >= Number(filterValue);
-      }
-
-      return (userObj[key] || "").toLowerCase().includes(filterValue);
+      return (userObj[key] || "").toString().toLowerCase().includes(filterValue);
     });
   });
 
-  // console.log(filteredData);
-
-  // useEffect(() => {
-  //   const filteredEmails = filteredData.map((userObj) => userObj.email);
-
-  //   setFilteredEmails(filteredEmails);
-  // }, [filter]);
-
-  const emailsData = {
-    email: selectedEmails,
-  };
-
-  console.log(emailsData);
-  const emailsJSON = JSON.stringify(emailsData);
-
-  const handleSendNotification = () => {
-
-    const notificationData = {
-      subject,
-      message,
-    };
-
-    sendEmailsToBackend({
-      email: selectedEmails,
-      ...notificationData,
-    });
-
-    closeSendDialog();
-  };
-
-  const sendEmailsToBackend = async (emailsData, notificationDataa) => {
+  const handleSendNotification = async () => {
     try {
-      const dataToSend = {
-        ...emailsData,
+      await axios.post("http://localhost:5000/send-notification/send-notification", {
+        email: selectedEmails,
         subject,
         message,
-      };
-
-      console.log(dataToSend);
-      const response = await axios.post(
-        "http://localhost:5000/send-notification/send-notification",
-        dataToSend,
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-
-      console.log("Emails sent to the backend:", response.data);
+      });
+      setSendDialogOpen(false);
+      setSubject("");
+      setMessage("");
     } catch (error) {
-      console.error("Error sending emails to the backend:", error);
+      console.error("Error sending notification:", error);
     }
   };
 
-  const handleSelectionModelChange = (selectionModel) => {
-    console.log("Selection Model:", selectionModel);
-
-    const selectedEmails = selectionModel.map((selectedEmail, index) => {
-      const userIndex = filteredData.findIndex(
-        (user) => user.email === selectedEmail
-      );
-
-      console.log(
-        `Selected Index ${selectedEmail} (Data Index ${index}${selectedEmail}):`,
-        filteredData[userIndex]
-      );
-
-      return filteredData[userIndex]?.email;
-    });
-
-    console.log("Selected Emails:", selectedEmails);
-
-    setSelectedEmails(selectedEmails);
-    console.log("Updated Selected Emails in State:", selectedEmails);
-  };
-
+  const CustomToolbar = () => (
+    <GridToolbarContainer className={classes.customToolbar}>
+      <GridToolbar />
+      <Box>
+        <Button variant="outlined" sx={{ mr: 1 }} onClick={() => setFilterDialogOpen(true)} startIcon={<FilterListIcon />}>
+          Filters
+        </Button>
+        <Button variant="outlined" onClick={() => setSendDialogOpen(true)} startIcon={<NotificationsIcon />}>
+          Notify
+        </Button>
+      </Box>
+    </GridToolbarContainer>
+  );
 
   return (
     <div className="my-5 mx-5">
-      <Dialog maxWidth="xl" open={sendDialogOpen} onClose={closeSendDialog}>
-        <Typography
-          className="mt-3 justify-content-center"
-          sx={{ marginLeft: "450px", fontWeight: "bold", fontFamily: "NUNITO" }}
-        >
-          SEND NOTIFICATION
-        </Typography>
+      <Dialog open={filterDialogOpen} onClose={() => setFilterDialogOpen(false)}>
         <DialogContent className={classes.dialogContent}>
-          {/* <InputLabel htmlFor="subject" className={object.label}>
-          Subject
-        </InputLabel> */}
-          <TextField
-            name="subject"
-            label="Subject"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            className={classes.textField}
-          />
-          <br />
-          {/* <InputLabel htmlFor="message" className={object.label}>
-          Message
-        </InputLabel> */}
-          <TextareaAutosize
-            className={`${classes.textArea}`}
-            name="message"
-            minRows={4}
-            placeholder="Message"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-          />
-          <div className={classes.buttonContainer}>
-            <Button
-              onClick={closeSendDialog}
-              variant="contained"
-              color="primary"
-              className={classes.button}
-            >
-              Close
-            </Button>
-            <Button
-              onClick={handleSendNotification}
-              variant="contained"
-              color="primary"
-              className={classes.button}
-            >
-              Send Notification
-            </Button>
-          </div>
+          <Typography variant="h6" align="center" sx={{ mb: 2 }}>FILTERS</Typography>
+          <TextField onChange={handleInputChange} name="firstname" label="First Name" fullWidth sx={{ mb: 2 }} />
+          <TextField onChange={handleInputChange} name="department" label="Department" fullWidth sx={{ mb: 2 }} />
+          <TextField onChange={handleInputChange} name="activearrears" label="Min Active Arrears" type="number" fullWidth sx={{ mb: 2 }} />
+          <TextField onChange={handleInputChange} name="mcaaggregateCGPA" label="Min MCA CGPA" type="number" fullWidth sx={{ mb: 2 }} />
+          <Button onClick={() => setFilterDialogOpen(false)} variant="contained" fullWidth>Apply Filters</Button>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={filterDialogOpen} onClose={closeFilterDialog}>
-        <DialogContent className={classes.dialogContent}>
-          <TextField
-            onChange={handleInputChange}
-            name="firstname"
-            className={classes.filterTextField}
-            label="Filter Firstname"
-          />
-          <TextField
-            onChange={handleInputChange}
-            name="lastname"
-            className={classes.filterTextField}
-            label="Filter Lastname"
-          />
-          <TextField
-            onChange={handleInputChange}
-            name="department"
-            className={classes.filterTextField}
-            label="Filter Department"
-          />
-          <TextField
-            onChange={handleInputChange}
-            name="tenthpercentage"
-            className={classes.filterTextField}
-            label="Filter 10th %"
-            type="number"
-          />
-          <TextField
-            onChange={handleInputChange}
-            name="tenthCGPA"
-            className={classes.filterTextField}
-            label="Filter 10th CGPA"
-          />
-          <TextField
-            onChange={handleInputChange}
-            name="twelthpercentage"
-            className={classes.filterTextField}
-            label="Filter 12th %"
-          />
-          <TextField
-            onChange={handleInputChange}
-            name="twelthCGPA"
-            className={classes.filterTextField}
-            label="Filter twelthe CGPA"
-          />
-          <TextField
-            onChange={handleInputChange}
-            name="ugCGPA"
-            className={classes.filterTextField}
-            label="Filter UG CGPA"
-          />
-          <TextField
-            onChange={handleInputChange}
-            name="mcaaggregateCGPA"
-            className={classes.filterTextField}
-            label="MCA CGPA"
-          />
-          <TextField
-            onChange={handleInputChange}
-            name="activearrears"
-            className={classes.filterTextField}
-            label="Active Arrears"
-          />
-          <Button
-            onClick={closeFilterDialog}
-            variant="contained"
-            color="primary"
-            className={classes.button}
-          >
-            Apply Filters
-          </Button>
+      <Dialog maxWidth="md" fullWidth open={sendDialogOpen} onClose={() => setSendDialogOpen(false)}>
+        <DialogContent>
+          <Typography variant="h6" align="center" sx={{ mb: 2 }}>SEND NOTIFICATION</Typography>
+          <TextField label="Subject" fullWidth value={subject} onChange={(e) => setSubject(e.target.value)} sx={{ mb: 2 }} />
+          <TextareaAutosize className={classes.textArea} minRows={6} placeholder="Message body..." value={message} onChange={(e) => setMessage(e.target.value)} />
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+            <Button onClick={() => setSendDialogOpen(false)} sx={{ mr: 1 }}>Cancel</Button>
+            <Button variant="contained" onClick={handleSendNotification}>Send</Button>
+          </Box>
         </DialogContent>
       </Dialog>
-      {/* <Button variant="outlined" color="primary" onClick={sendEmailsToBackend}>
-        Send Notification
-      </Button> */}
-      {filteredData.length > 0 ? (
-        <DataGrid
-          columns={columns.map((column) => ({
-            ...column,
-            headerClassName: classes.customHeader,
-          }))}
-          sx={{ color: "black", fontFamily: "Nunito" }}
-          checkboxSelection
-          rows={filteredData}
-          // columns={columns}
-          page={page}
-          pageSize={rowsPerPage}
-          onPageChange={handleChangePage}
-          onPageSizeChange={handleChangeRowsPerPage}
-          components={{
-            Toolbar: CustomToolbar,
-          }}
-          getRowHeight={(params) => 60}
-          style={{ height: "700px", width: "100%" }}
-          rowKeyField="email"
-          getRowId={(row) => row.email}
-          onRowSelectionModelChange={handleSelectionModelChange}
-          selectionModel={selectedEmails.map((email) =>
-            filteredData.findIndex((user) => user.email === email)
-          )}
-          renderCell={(params) => (
-            <StatusButton
-            status={params.row.status}
-            email={params.row.email}
-            onChange={(status) => handleStatusChange(params.row.email, status)}
-          />
-          )}
-        />
+
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}>
+          <Typography variant="h6">Loading student records...</Typography>
+        </Box>
       ) : (
-        <p>Loading data...</p>
+        <DataGrid
+          rows={filteredData}
+          columns={columns.map((col) => ({ ...col, headerClassName: classes.customHeader }))}
+          getRowId={(row) => row.id}
+          pageSize={rowsPerPage}
+          onPageSizeChange={(newSize) => setRowsPerPage(newSize)}
+          rowsPerPageOptions={[5, 10, 20]}
+          checkboxSelection
+          onRowSelectionModelChange={(newSelection) => setSelectedEmails(newSelection)}
+          components={{ Toolbar: CustomToolbar }}
+          autoHeight
+          sx={{ backgroundColor: "white", fontFamily: "Nunito", boxShadow: 2 }}
+        />
       )}
     </div>
   );

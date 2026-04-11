@@ -22,11 +22,30 @@ export default function SignUpForm() {
   const [email, setEmail] = useState("");
   const [departments, setDepartments] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
+  
+  // NEW: States for Resend OTP Timer
+  const [timer, setTimer] = useState(0);
+  const [canResend, setCanResend] = useState(true);
+  
   const navigate = useNavigate();
 
-  const { handleSubmit, control, trigger, formState: { errors } } = useForm({
+  const { handleSubmit, control, formState: { errors } } = useForm({
     resolver: yupResolver(validationSchema),
   });
+
+  // Timer Effect
+  useEffect(() => {
+    let interval;
+    if (timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    } else {
+      setCanResend(true);
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [timer]);
 
   useEffect(() => {
     async function fetchDepartments() {
@@ -41,10 +60,18 @@ export default function SignUpForm() {
   }, []);
 
   const handleVerifyEmail = async () => {
+    if (!email) {
+      toast.error("Please enter an email first");
+      return;
+    }
     try {
+      setCanResend(false);
+      setTimer(20); // Start 20 second countdown
       await axios.post("http://localhost:5000/verify-email/verify-email", { email });
-      toast.info("Check your VS Code Terminal for the OTP!");
+      toast.info("OTP sent! Check your email or Terminal.");
     } catch (error) {
+      setCanResend(true);
+      setTimer(0);
       toast.error("Error connecting to server.");
     }
   };
@@ -67,7 +94,7 @@ export default function SignUpForm() {
 
   return (
     <div className="signup-page" style={{ paddingTop: "120px" }}>
-      <Container component="main" sx={{ backgroundColor: "white", width: "600px", borderRadius: "10px", p: 3 }}>
+      <Container component="main" sx={{ backgroundColor: "white", width: "600px", borderRadius: "10px", p: 3, boxShadow: 3 }}>
         <CssBaseline />
         <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
           <Avatar sx={{ m: 1, bgcolor: "secondary.main" }}><LockOutlinedIcon /></Avatar>
@@ -143,15 +170,37 @@ export default function SignUpForm() {
                 <Controller name="email" control={control} defaultValue="" render={({ field }) => (
                   <Box sx={{ display: "flex", gap: 1 }}>
                     <TextField {...field} fullWidth label="Email" onChange={(e) => { field.onChange(e); setEmail(e.target.value); }} error={!!errors.email} helperText={errors.email?.message} />
-                    <Button variant="contained" onClick={handleVerifyEmail} sx={{ height: "55px" }}>Verify</Button>
+                    <Button variant="contained" onClick={handleVerifyEmail} disabled={!canResend && timer > 0} sx={{ height: "55px", minWidth: "100px" }}>
+                      {timer > 0 ? `${timer}s` : "Verify"}
+                    </Button>
                   </Box>
                 )} />
               </Grid>
+              
               <Grid item xs={12}>
                 <Controller name="otpemail" control={control} defaultValue="" render={({ field }) => (
-                  <TextField {...field} fullWidth label="Enter 6-Digit OTP" error={!!errors.otpemail} helperText={errors.otpemail?.message} />
+                  <Box>
+                    <TextField {...field} fullWidth label="Enter 6-Digit OTP" error={!!errors.otpemail} helperText={errors.otpemail?.message} />
+                    {/* Resend Link logic */}
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.5 }}>
+                      {timer > 0 ? (
+                        <Typography variant="caption" color="textSecondary">
+                          Resend OTP in {timer} seconds
+                        </Typography>
+                      ) : (
+                        <Typography 
+                          variant="caption" 
+                          onClick={handleVerifyEmail}
+                          sx={{ color: '#1976d2', cursor: 'pointer', fontWeight: 'bold', '&:hover': { textDecoration: 'underline' } }}
+                        >
+                          Resend OTP
+                        </Typography>
+                      )}
+                    </Box>
+                  </Box>
                 )} />
               </Grid>
+
               <Grid item xs={12}>
                 <Controller name="password" control={control} defaultValue="" render={({ field }) => (
                   <TextField
@@ -174,9 +223,9 @@ export default function SignUpForm() {
                 )} />
               </Grid>
             </Grid>
-            <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }}>Sign Up</Button>
+            <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2, py: 1.5, fontWeight: 'bold' }}>Sign Up</Button>
           </form>
-          <NavLink to="/signin" style={{ textDecoration: "none", color: "blue" }}>Already have an account? Sign in</NavLink>
+          <NavLink to="/signin" style={{ textDecoration: "none", color: "#1976d2", fontWeight: 'bold' }}>Already have an account? Sign in</NavLink>
         </Box>
       </Container>
     </div>
