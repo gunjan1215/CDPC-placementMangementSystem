@@ -17,9 +17,7 @@ export default function TeacherManagement() {
   const [loading, setLoading] = useState(true);
   const [pageSize, setPageSize] = useState(10);
 
-  // 1. Improved Department Fetch Function
   const fetchDepartmentName = async (departmentId) => {
-    // If ID is null, undefined, or empty string, return N/A immediately
     if (!departmentId || departmentId === "undefined") return "Not Assigned";
     
     try {
@@ -35,13 +33,13 @@ export default function TeacherManagement() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get("http://localhost:5000/get-teachers");
+
+        // ✅ UPDATED API CALL
+        const response = await axios.get("http://localhost:5000/teacher");
         
-        // Ensure response.data is an array
         const rawData = Array.isArray(response.data) ? response.data : [];
 
         const teacherDataPromises = rawData.map(async (teacher, index) => {
-          // We wrap this in a sub-try-catch so one bad teacher record doesn't hide the whole list
           let deptName = "Not Assigned";
           try {
             deptName = await fetchDepartmentName(teacher.departmentId);
@@ -51,8 +49,7 @@ export default function TeacherManagement() {
 
           return {
             ...teacher,
-            // DataGrid MUST have a unique 'id' field. Use _id from MongoDB or index
-            id: teacher._id || `temp-id-${index}`, 
+            id: teacher._id || `temp-id-${index}`,
             serialNumber: index + 1,
             department: deptName,
           };

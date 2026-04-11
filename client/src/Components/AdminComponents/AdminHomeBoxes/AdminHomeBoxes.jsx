@@ -34,18 +34,17 @@ function AdminHomeBoxes() {
       });
 
     axios
-      .get("http://localhost:5000/get-teachers/get-teachers")
-      .then((response) => {
-        if (Array.isArray(response.data)) {
-          const count = response.data.length;
-          setTeacherCount(count);
-        } else {
-          console.error("Response data is not an array:", response.data);
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching student data:", error);
-      });
+  .get("http://localhost:5000/teacher")
+  .then((response) => {
+    if (Array.isArray(response.data)) {
+      setTeacherCount(response.data.length);
+    } else {
+      console.error("Invalid teacher response:", response.data);
+    }
+  })
+  .catch((error) => {
+    console.error("Error fetching teachers:", error);
+  });
 
     axios
       .get("http://localhost:5000/get-pdfs")
